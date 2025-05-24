@@ -9,17 +9,23 @@ class Cell:
         self.row = row
 
 class Circuit:
-    def __init__(self, rows=145, row_width=2500, row_height=504):
+    def __init__(self, rows=145, row_width=2500, row_height=504, max_cells=12028):
         self.rows = [[] for _ in range(rows)]
         self.row_width = row_width
         self.row_height = row_height
-        self.cells = HashTable(12028)
+        self.max_cells = max_cells
+        self.cells = HashTable(max_cells)
         self.loaded = False
 
     def insert_cell(self, id, width, height):
+        if self.cells.size >= self.max_cells:
+            raise ValueError("Maximum number of cells reached")
+        
         for row_idx, row in enumerate(self.rows):
             current_x = 0
             for cell in row:
+                if current_x + width > self.row_width:
+                    break
                 if current_x + width <= cell.x:
                     new_cell = Cell(id, width, height, current_x, row_idx)
                     row.append(new_cell)
@@ -27,12 +33,14 @@ class Circuit:
                     self.cells.insert(id, new_cell)
                     return
                 current_x = cell.x + cell.width
-            
+                
             if current_x + width <= self.row_width:
                 new_cell = Cell(id, width, height, current_x, row_idx)
                 row.append(new_cell)
                 self.cells.insert(id, new_cell)
                 return
+        
+        raise ValueError("Cell width exceeds row capacity")
 
     def search_cell(self, id):
         try:

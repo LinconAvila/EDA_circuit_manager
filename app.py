@@ -11,6 +11,18 @@ circuit = Circuit()
 def index():
     return render_template('index.html')
 
+@app.route('/update_params', methods=['POST'])
+def update_params():
+    data = request.get_json()
+    global circuit
+    circuit = Circuit(
+        rows=int(data['rows']),
+        row_width=int(data['row_width']),
+        row_height=int(data['row_height']),
+        max_cells=int(data['max_cells'])
+    )
+    return jsonify({"status": "success"})
+
 @app.route('/load', methods=['POST'])
 def load():
     file = request.files.get('file')
@@ -27,22 +39,16 @@ def load():
 def search():
     if not circuit.loaded:
         flash("Error: No file loaded. Please load a file first.", "error")
-        return jsonify({"status": "error", "message": "No file loaded. Please load a file first."})
+        return redirect(url_for('index'))
 
     id = request.form['id']
     result = circuit.search_cell(id)
     if result:
-        message = f"Cell {id} is in row {result[0]} at position x={result[1]}"
-        flash(message, "success")
-        return jsonify({
-            "status": "success",
-            "message": message,
-            "cell": {"id": id, "row": result[0], "x": result[1]}
-        })
+        flash(f"Cell {id} is in row {result[0]} at position x={result[1]}", "success")
     else:
-        message = f"Cell {id} not found."
-        flash(message, "error")
-        return jsonify({"status": "error", "message": message})
+        flash(f"Cell {id} not found.", "error")
+    return redirect(url_for('index'))
+
 
 @app.route('/insert', methods=['POST'])
 def insert():
