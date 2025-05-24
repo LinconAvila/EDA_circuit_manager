@@ -10,6 +10,7 @@
   --info: #560bad;
   --background: #ffffff;
   --card-bg: #f8f9fa;
+  --tooltip-bg: rgba(30, 30, 30, 0.95);
 }
 
 body {
@@ -134,10 +135,21 @@ input[type="text"]:focus, input[type="file"]:focus {
   padding: 1rem;
   margin-bottom: 0.5rem;
   border-radius: 8px;
-  background-color: var(--warning);
   color: white;
   font-weight: 500;
   animation: fadeIn 0.3s ease-out;
+}
+
+.flash-messages .success {
+  background-color: var(--success);
+}
+
+.flash-messages .error {
+  background-color: var(--danger);
+}
+
+.flash-messages .warning {
+  background-color: var(--warning);
 }
 
 .circuit-container {
@@ -163,8 +175,11 @@ input[type="text"]:focus, input[type="file"]:focus {
   max-width: 1000px;
   display: block;
   margin: 0 auto;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  cursor: grab;
+}
+
+#canvas:active {
+  cursor: grabbing;
 }
 
 .download-container {
@@ -174,8 +189,8 @@ input[type="text"]:focus, input[type="file"]:focus {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {
@@ -207,24 +222,54 @@ input[type="text"]:focus, input[type="file"]:focus {
   }
 }
 
-.flash-messages li {
-    animation: fadeIn 0.3s ease-out;
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    border-radius: 8px;
-    color: white;
-    font-weight: 500;
+/* Tooltip styles */
+.tooltip {
+  position: absolute;
+  background: var(--tooltip-bg);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 1000;
+  max-width: 300px;
+  line-height: 1.5;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
-.flash-messages .success {
-    background-color: var(--success);
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px;
+  border-style: solid;
+  border-color: var(--tooltip-bg) transparent transparent transparent;
 }
 
-.flash-messages .error {
-    background-color: var(--danger);
+.tooltip-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-size: 14px;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+.tooltip-content {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+}
+
+.tooltip-label {
+  font-weight: 500;
+  color: rgba(255,255,255,0.8);
+}
+
+.tooltip-value {
+  font-weight: 400;
+  color: white;
 }

@@ -61,7 +61,7 @@
     </ul>
     {% endif %}
     {% endwith %}
-</div>
+  </div>
 
   <div class="circuit-container">
     <div class="circuit">
@@ -75,7 +75,7 @@
     </form>
   </div>
 
- <script>
+  <script>
     let circuitData = [];
     let hoveredCell = null;
     const rowHeight = 30;
@@ -138,6 +138,62 @@
         }
     }
 
+    function drawTooltip(ctx, cell) {
+        const visualX = cell.x * scale - offsetX;
+        const visualY = cell.y * rowHeight;
+        const visualWidth = cell.width * scale;
+        
+        const tooltipX = visualX + visualWidth / 2;
+        const tooltipY = visualY - 10;
+        
+        const text = [
+            `ID: ${cell.id}`,
+            `Row: ${cell.y}`,
+            `X: ${cell.x.toFixed(2)}`,
+            `Width: ${cell.width.toFixed(2)}`,
+            `Height: ${cell.height.toFixed(2)}`
+        ];
+        
+        ctx.font = 'bold 12px Inter';
+        const textWidth = Math.max(...text.map(line => ctx.measureText(line).width));
+        const textHeight = text.length * 18;
+        
+        const canvas = ctx.canvas;
+        const padding = 8;
+        const tooltipWidth = textWidth + padding * 2;
+        const tooltipHeight = textHeight + padding * 2;
+        
+        const finalX = Math.max(padding, Math.min(tooltipX - tooltipWidth/2, canvas.width - tooltipWidth - padding));
+        const finalY = Math.max(padding, tooltipY - tooltipHeight - padding);
+        
+        ctx.fillStyle = 'rgba(30, 30, 30, 0.95)';
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 1;
+        
+        const radius = 6;
+        ctx.beginPath();
+        ctx.moveTo(finalX + radius, finalY);
+        ctx.lineTo(finalX + tooltipWidth - radius, finalY);
+        ctx.quadraticCurveTo(finalX + tooltipWidth, finalY, finalX + tooltipWidth, finalY + radius);
+        ctx.lineTo(finalX + tooltipWidth, finalY + tooltipHeight - radius);
+        ctx.quadraticCurveTo(finalX + tooltipWidth, finalY + tooltipHeight, finalX + tooltipWidth - radius, finalY + tooltipHeight);
+        ctx.lineTo(finalX + radius, finalY + tooltipHeight);
+        ctx.quadraticCurveTo(finalX, finalY + tooltipHeight, finalX, finalY + tooltipHeight - radius);
+        ctx.lineTo(finalX, finalY + radius);
+        ctx.quadraticCurveTo(finalX, finalY, finalX + radius, finalY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.font = '12px Inter';
+        text.forEach((line, i) => {
+            ctx.fillText(line, finalX + padding, finalY + padding + i * 18);
+        });
+    }
+
     document.getElementById('canvas').addEventListener('mousedown', (e) => {
         isDragging = true;
         lastX = e.clientX;
@@ -172,45 +228,40 @@
     }
 
     document.querySelector('form[action="/search"]').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    const cellId = formData.get('id');
-    
-    fetch('/search', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Atualiza as flash messages
-        fetch('/')
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const flashMessages = doc.querySelector('.flash-messages');
-            if (flashMessages) {
-                document.querySelector('.flash-messages').innerHTML = flashMessages.innerHTML;
-            }
-            
-            // Se a célula foi encontrada, centraliza no canvas
-            if (data.status === "success" && data.cell) {
-                centerCell(data.cell.id);
-                drawCircuit();
-            }
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch('/search', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            fetch('/')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const flashMessages = doc.querySelector('.flash-messages');
+                if (flashMessages) {
+                    document.querySelector('.flash-messages').innerHTML = flashMessages.innerHTML;
+                }
+                if (data.status === "success" && data.cell) {
+                    centerCell(data.cell.id);
+                    drawCircuit();
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const flashContainer = document.querySelector('.flash-messages');
+            flashContainer.innerHTML = `
+                <ul>
+                    <li class="error">An error occurred during search</li>
+                </ul>
+            `;
         });
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        // Mostra mensagem de erro genérica se algo falhar
-        const flashContainer = document.querySelector('.flash-messages');
-        flashContainer.innerHTML = `
-            <ul>
-                <li class="error">An error occurred during search</li>
-            </ul>
-        `;
     });
-});
+
     document.getElementById('canvas').addEventListener('mousemove', (e) => {
         const canvas = e.target;
         const rect = canvas.getBoundingClientRect();
@@ -244,7 +295,6 @@
             btn.addEventListener('click', () => setTimeout(drawCircuit, 300));
         }
     });
-</script>
+  </script>
 </body>
-
 </html>

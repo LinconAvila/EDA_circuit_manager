@@ -96,7 +96,7 @@ def circuit_json():
                 'x': cell.x,
                 'y': row_idx,
                 'width': cell.width,
-                'height': 1
+                'height': cell.height
             })
     return jsonify(data)
 
