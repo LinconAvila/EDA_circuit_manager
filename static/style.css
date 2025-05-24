@@ -267,3 +267,12 @@ input[type="file"]:focus {
   color: white;
 }
 
+
+footer {
+  text-align: center;
+  padding: 1rem 0;
+  background-color: var(--dark);
+  color: white;
+  font-size: 0.9rem;
+  margin-top: 2rem;
+}
