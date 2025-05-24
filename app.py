@@ -14,14 +14,19 @@ def index():
 @app.route('/update_params', methods=['POST'])
 def update_params():
     data = request.get_json()
-    global circuit
-    circuit = Circuit(
-        rows=int(data['rows']),
-        row_width=int(data['row_width']),
-        row_height=int(data['row_height']),
-        max_cells=int(data['max_cells'])
-    )
-    return jsonify({"status": "success"})
+    try:
+        global circuit
+        circuit = Circuit(
+            rows=int(data['rows']),
+            row_width=int(data['row_width']),
+            row_height=int(data['row_height']),
+            max_cells=int(data['max_cells'])
+        )
+        return jsonify({"status": "success", "message": "Parameters updated"})
+    except KeyError as e:
+        return jsonify({"status": "error", "message": f"Missing parameter: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
 
 @app.route('/load', methods=['POST'])
 def load():
@@ -39,21 +44,39 @@ def load():
 def search():
     if not circuit.loaded:
         flash("Error: No file loaded. Please load a file first.", "error")
-        return redirect(url_for('index'))
-
+        return jsonify({
+            "status": "error", 
+            "message": "No file loaded. Please load a file first."
+        })
+    
     id = request.form['id']
     result = circuit.search_cell(id)
     if result:
-        flash(f"Cell {id} is in row {result[0]} at position x={result[1]}", "success")
+        message = f"Cell {id} is in row {result[0]} at position x={result[1]}"
+        flash(message, "success")
+        return jsonify({
+            "status": "success",
+            "message": message,
+            "cell": {
+                "id": id, 
+                "row": result[0], 
+                "x": result[1],
+                "found": True
+            }
+        })
     else:
-        flash(f"Cell {id} not found.", "error")
-    return redirect(url_for('index'))
-
+        message = f"Cell {id} not found."
+        flash(message, "error")
+        return jsonify({
+            "status": "error", 
+            "message": message,
+            "cell": {"found": False}
+        })
 
 @app.route('/insert', methods=['POST'])
 def insert():
     if not circuit.loaded:
-        flash("Error: No file loaded. Please load a file first.")
+        flash("Error: No file loaded. Please load a file first.", "error")
         return redirect(url_for('index'))
 
     id = request.form['id']
@@ -61,28 +84,30 @@ def insert():
         width = float(request.form['width'])
         height = float(request.form['height'])
         circuit.insert_cell(id, width, height)
-        flash(f"Cell {id} inserted successfully.")
-    except:
-        flash("Error inserting. Check the values.")
+        flash(f"Cell {id} inserted successfully.", "success")
+    except ValueError as e:
+        flash(f"Insertion error: {str(e)}", "error")
+    except Exception as e:
+        flash(f"Critical error: {str(e)}", "error")
     return redirect(url_for('index'))
 
 @app.route('/remove', methods=['POST'])
 def remove():
     if not circuit.loaded:
-        flash("Error: No file loaded. Please load a file first.")
+        flash("Error: No file loaded. Please load a file first.", "error")
         return redirect(url_for('index'))
 
     id = request.form['id']
     if circuit.remove_cell(id):
-        flash(f"Cell {id} removed.")
+        flash(f"Cell {id} removed.", "success")
     else:
-        flash(f"Cell {id} not found.")
+        flash(f"Cell {id} not found.", "error")
     return redirect(url_for('index'))
 
 @app.route('/download')
 def download():
     if not circuit.loaded:
-        flash("Error: No file loaded. Nothing to download.")
+        flash("Error: No file loaded. Nothing to download.", "error")
         return redirect(url_for('index'))
 
     temp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode='w', encoding='utf-8')

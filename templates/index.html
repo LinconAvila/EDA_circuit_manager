@@ -1,280 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Circuit Manager</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circuit Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
-    <header>
-        <h1>Circuit Manager</h1>
-        <p>Visualize and manage your circuit layouts</p>
-    </header>
+  <header>
+    <h1>Circuit Manager</h1>
+    <p>Visualize and manage your circuit layouts</p>
+  </header>
 
-    <div class="form-container">
-        <div class="form-card">
-            <h2>Circuit Parameters</h2>
-            <form id="params-form" class="form-inline">
-                <input type="number" name="rows" placeholder="Number of rows" min="1" value="145" required>
-                <input type="number" name="row_width" placeholder="Row width" min="1" value="2500" required>
-                <input type="number" name="row_height" placeholder="Row height" min="1" value="504" required>
-                <input type="number" name="max_cells" placeholder="Max cells" min="1" value="12028" required>
-                <button class="btn btn-info" type="submit">Update Parameters</button>
-            </form>
-        </div>
-
-        <div class="form-card">
-            <h2>Load Circuit File</h2>
-            <form method="POST" action="/load" enctype="multipart/form-data" class="form-inline">
-                <input type="file" name="file" required>
-                <button class="btn btn-dark" type="submit">Load File</button>
-            </form>
-        </div>
-
-        <div class="form-card">
-            <h2>Search Cell</h2>
-            <form method="POST" action="/search" class="form-inline">
-                <input type="text" name="id" placeholder="Enter Cell ID" required>
-                <button class="btn btn-primary" type="submit">Search Cell</button>
-            </form>
-        </div>
-
-        <div class="form-card">
-            <h2>Insert Cell</h2>
-            <form method="POST" action="/insert" class="form-inline">
-                <input type="text" name="id" placeholder="Cell ID" required>
-                <input type="text" name="width" placeholder="Width" required>
-                <input type="text" name="height" placeholder="Height" required>
-                <button class="btn btn-success" type="submit">Insert Cell</button>
-            </form>
-        </div>
-
-        <div class="form-card">
-            <h2>Remove Cell</h2>
-            <form method="POST" action="/remove" class="form-inline">
-                <input type="text" name="id" placeholder="Cell ID to remove" required>
-                <button class="btn btn-danger" type="submit">Remove Cell</button>
-            </form>
-        </div>
+  <div class="form-container">
+    <div class="form-card">
+      <h2>Circuit Parameters</h2>
+      <form id="params-form" class="form-inline">
+        <input type="number" name="rows" placeholder="Number of rows" min="1" value="145" required>
+        <input type="number" name="row_width" placeholder="Row width" min="1" value="2500" required>
+        <input type="number" name="row_height" placeholder="Row height" min="1" value="504" required>
+        <input type="number" name="max_cells" placeholder="Max cells" min="1" value="12028" required>
+        <button class="btn btn-info" type="submit">Update Parameters</button>
+      </form>
     </div>
 
-    <div class="flash-messages">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <ul>
-            {% for category, msg in messages %}
-            <li class="{{ category }}">{{ msg }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        {% endwith %}
+    <div class="form-card">
+      <h2>Load Circuit File</h2>
+      <form method="POST" action="/load" enctype="multipart/form-data" class="form-inline">
+        <input type="file" name="file" required>
+        <button class="btn btn-dark" type="submit">Load File</button>
+      </form>
     </div>
 
-    <div id="canvas-container">
-        <canvas id="canvas"></canvas>
+    <div class="form-card">
+      <h2>Search Cell</h2>
+      <form method="POST" action="/search" class="form-inline">
+        <input type="text" name="id" placeholder="Enter Cell ID" required>
+        <button class="btn btn-primary" type="submit">Search Cell</button>
+      </form>
     </div>
 
-    <div class="download-container">
-        <form method="GET" action="/download" class="form-inline">
-            <button class="btn btn-info" type="submit">Download Modified Circuit</button>
-        </form>
+    <div class="form-card">
+      <h2>Insert Cell</h2>
+      <form method="POST" action="/insert" class="form-inline">
+        <input type="text" name="id" placeholder="Cell ID" required>
+        <input type="text" name="width" placeholder="Width" required>
+        <input type="text" name="height" placeholder="Height" required>
+        <button class="btn btn-success" type="submit">Insert Cell</button>
+      </form>
     </div>
 
-    <script>
-        let circuitData = [];
-        let hoveredCell = null;
-        const rowHeight = 30;
-        const cellHeight = 25;
-        const scale = 0.5;
-        let circuitParams = {
-            rows: 145,
-            rowWidth: 2500,
-            rowHeight: 504,
-            maxCells: 12028
-        };
+    <div class="form-card">
+      <h2>Remove Cell</h2>
+      <form method="POST" action="/remove" class="form-inline">
+        <input type="text" name="id" placeholder="Cell ID to remove" required>
+        <button class="btn btn-danger" type="submit">Remove Cell</button>
+      </form>
+    </div>
+  </div>
 
-        function adjustCanvasSize() {
-            const container = document.getElementById('canvas-container');
-            const canvas = document.getElementById('canvas');
-            canvas.width = Math.min(circuitParams.rowWidth * scale + 100, window.innerWidth - 40);
-            canvas.height = circuitParams.rows * rowHeight + 50;
-            container.style.maxWidth = `${canvas.width}px`;
+  <div class="flash-messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul>
+      {% for category, msg in messages %}
+      <li class="{{ category }}">{{ msg }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+  </div>
+
+  <div id="canvas-container">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div class="download-container">
+    <form method="GET" action="/download" class="form-inline">
+      <button class="btn btn-info" type="submit">Download Modified Circuit</button>
+    </form>
+  </div>
+
+  <script>
+    let circuitData = [];
+    let hoveredCell = null;
+    const rowHeight = 30;
+    const cellHeight = 25;
+    const scale = 0.5;
+    let circuitParams = {
+      rows: 145,
+      rowWidth: 2500,
+      rowHeight: 504,
+      maxCells: 12028
+    };
+
+    function adjustCanvasSize() {
+      const container = document.getElementById('canvas-container');
+      const canvas = document.getElementById('canvas');
+      canvas.width = Math.min(circuitParams.rowWidth * scale + 100, window.innerWidth - 40);
+      canvas.height = circuitParams.rows * rowHeight + 50;
+      container.style.maxWidth = `${canvas.width}px`;
+    }
+
+    async function drawCircuit() {
+      const response = await fetch('/circuit_json');
+      circuitData = await response.json();
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < circuitParams.rows; i++) {
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.beginPath();
+        ctx.moveTo(0, i * rowHeight + cellHeight);
+        ctx.lineTo(canvas.width, i * rowHeight + cellHeight);
+        ctx.stroke();
+        ctx.fillStyle = '#999';
+        ctx.font = '10px Inter';
+        ctx.fillText(i.toString(), 5, i * rowHeight + cellHeight - 5);
+      }
+
+      for (const cell of circuitData) {
+        const visualX = cell.x * scale;
+        const visualY = cell.y * rowHeight;
+        const visualWidth = cell.width * scale;
+
+        if (hoveredCell && hoveredCell.id === cell.id) {
+          ctx.fillStyle = 'rgba(247, 37, 133, 0.8)';
+          ctx.strokeStyle = '#f72585';
+        } else {
+          ctx.fillStyle = 'rgba(67, 97, 238, 0.7)';
+          ctx.strokeStyle = '#4361ee';
         }
 
-        async function drawCircuit() {
-            const response = await fetch('/circuit_json');
-            circuitData = await response.json();
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            for (let i = 0; i < circuitParams.rows; i++) {
-                ctx.strokeStyle = '#e0e0e0';
-                ctx.beginPath();
-                ctx.moveTo(0, i * rowHeight + cellHeight);
-                ctx.lineTo(canvas.width, i * rowHeight + cellHeight);
-                ctx.stroke();
-                ctx.fillStyle = '#999';
-                ctx.font = '10px Inter';
-                ctx.fillText(i.toString(), 5, i * rowHeight + cellHeight - 5);
-            }
-
-            for (const cell of circuitData) {
-                const visualX = cell.x * scale;
-                const visualY = cell.y * rowHeight;
-                const visualWidth = cell.width * scale;
-                
-                if (hoveredCell && hoveredCell.id === cell.id) {
-                    ctx.fillStyle = 'rgba(247, 37, 133, 0.8)';
-                    ctx.strokeStyle = '#f72585';
-                } else {
-                    ctx.fillStyle = 'rgba(67, 97, 238, 0.7)';
-                    ctx.strokeStyle = '#4361ee';
-                }
-                
-                if (visualX + visualWidth > 0 && visualX < canvas.width) {
-                    ctx.fillRect(visualX, visualY, visualWidth, cellHeight);
-                    ctx.strokeRect(visualX, visualY, visualWidth, cellHeight);
-                    ctx.fillStyle = '#fff';
-                    ctx.font = '10px Inter';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(cell.id, visualX + visualWidth / 2, visualY + cellHeight / 2 + 4);
-                }
-            }
-
-            if (hoveredCell) {
-                drawTooltip(ctx, hoveredCell);
-            }
+        if (visualX + visualWidth > 0 && visualX < canvas.width) {
+          ctx.fillRect(visualX, visualY, visualWidth, cellHeight);
+          ctx.strokeRect(visualX, visualY, visualWidth, cellHeight);
+          ctx.fillStyle = '#fff';
+          ctx.font = '10px Inter';
+          ctx.textAlign = 'center';
+          ctx.fillText(cell.id, visualX + visualWidth / 2, visualY + cellHeight / 2 + 4);
         }
+      }
 
-        function drawTooltip(ctx, cell) {
-            const visualX = cell.x * scale;
-            const visualY = cell.y * rowHeight;
-            const visualWidth = cell.width * scale;
-            const tooltipX = visualX + visualWidth / 2;
-            const tooltipY = visualY - 10;
-            const text = [
-                `ID: ${cell.id}`,
-                `Row: ${cell.y}`,
-                `X: ${cell.x.toFixed(2)}`,
-                `Width: ${cell.width.toFixed(2)}`,
-                `Height: ${cell.height.toFixed(2)}`
-            ];
-            
-            ctx.font = 'bold 12px Inter';
-            const textWidth = Math.max(...text.map(line => ctx.measureText(line).width));
-            const textHeight = text.length * 18;
-            const canvas = ctx.canvas;
-            const padding = 8;
-            const tooltipWidth = textWidth + padding * 2;
-            const tooltipHeight = textHeight + padding * 2;
-            const finalX = Math.max(padding, Math.min(tooltipX - tooltipWidth/2, canvas.width - tooltipWidth - padding));
-            const finalY = Math.max(padding, tooltipY - tooltipHeight - padding);
-            
-            ctx.fillStyle = 'rgba(30, 30, 30, 0.95)';
-            ctx.strokeStyle = '#555';
-            ctx.lineWidth = 1;
-            const radius = 6;
-            ctx.beginPath();
-            ctx.moveTo(finalX + radius, finalY);
-            ctx.lineTo(finalX + tooltipWidth - radius, finalY);
-            ctx.quadraticCurveTo(finalX + tooltipWidth, finalY, finalX + tooltipWidth, finalY + radius);
-            ctx.lineTo(finalX + tooltipWidth, finalY + tooltipHeight - radius);
-            ctx.quadraticCurveTo(finalX + tooltipWidth, finalY + tooltipHeight, finalX + tooltipWidth - radius, finalY + tooltipHeight);
-            ctx.lineTo(finalX + radius, finalY + tooltipHeight);
-            ctx.quadraticCurveTo(finalX, finalY + tooltipHeight, finalX, finalY + tooltipHeight - radius);
-            ctx.lineTo(finalX, finalY + radius);
-            ctx.quadraticCurveTo(finalX, finalY, finalX + radius, finalY);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            
-            ctx.fillStyle = '#fff';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.font = '12px Inter';
-            text.forEach((line, i) => {
-                ctx.fillText(line, finalX + padding, finalY + padding + i * 18);
-            });
-        }
+      if (hoveredCell) {
+        drawTooltip(ctx, hoveredCell);
+      }
+    }
 
-        document.getElementById('params-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            try {
-                const response = await fetch('/update_params', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        rows: this.rows.value,
-                        row_width: this.row_width.value,
-                        row_height: this.row_height.value,
-                        max_cells: this.max_cells.value
-                    })
-                });
-                const result = await response.json();
-                const flashContainer = document.querySelector('.flash-messages');
-                flashContainer.innerHTML = `<ul><li class="${result.status}">${result.message}</li></ul>`;
-                
-                if (result.status === "success") {
-                    circuitParams = {
-                        rows: parseInt(this.rows.value),
-                        rowWidth: parseInt(this.row_width.value),
-                        rowHeight: parseInt(this.row_height.value),
-                        maxCells: parseInt(this.max_cells.value)
-                    };
-                    adjustCanvasSize();
-                    drawCircuit();
-                }
-            } catch (error) {
-                console.error(error);
-                const flashContainer = document.querySelector('.flash-messages');
-                flashContainer.innerHTML = `<ul><li class="error">Failed to update parameters</li></ul>`;
-            }
+    function drawTooltip(ctx, cell) {
+      const visualX = cell.x * scale;
+      const visualY = cell.y * rowHeight;
+      const visualWidth = cell.width * scale;
+      const tooltipX = visualX + visualWidth / 2;
+      const tooltipY = visualY - 10;
+      const text = [
+        `ID: ${cell.id}`,
+        `Row: ${cell.y}`,
+        `X: ${cell.x.toFixed(2)}`,
+        `Width: ${cell.width.toFixed(2)}`,
+        `Height: ${cell.height.toFixed(2)}`
+      ];
+
+      ctx.font = 'bold 12px Inter';
+      const textWidth = Math.max(...text.map(line => ctx.measureText(line).width));
+      const textHeight = text.length * 18;
+      const canvas = ctx.canvas;
+      const padding = 8;
+      const tooltipWidth = textWidth + padding * 2;
+      const tooltipHeight = textHeight + padding * 2;
+      const finalX = Math.max(padding, Math.min(tooltipX - tooltipWidth / 2, canvas.width - tooltipWidth - padding));
+      const finalY = Math.max(padding, tooltipY - tooltipHeight - padding);
+
+      ctx.fillStyle = 'rgba(30, 30, 30, 0.95)';
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 1;
+      const radius = 6;
+      ctx.beginPath();
+      ctx.moveTo(finalX + radius, finalY);
+      ctx.lineTo(finalX + tooltipWidth - radius, finalY);
+      ctx.quadraticCurveTo(finalX + tooltipWidth, finalY, finalX + tooltipWidth, finalY + radius);
+      ctx.lineTo(finalX + tooltipWidth, finalY + tooltipHeight - radius);
+      ctx.quadraticCurveTo(finalX + tooltipWidth, finalY + tooltipHeight, finalX + tooltipWidth - radius, finalY + tooltipHeight);
+      ctx.lineTo(finalX + radius, finalY + tooltipHeight);
+      ctx.quadraticCurveTo(finalX, finalY + tooltipHeight, finalX, finalY + tooltipHeight - radius);
+      ctx.lineTo(finalX, finalY + radius);
+      ctx.quadraticCurveTo(finalX, finalY, finalX + radius, finalY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.font = '12px Inter';
+      text.forEach((line, i) => {
+        ctx.fillText(line, finalX + padding, finalY + padding + i * 18);
+      });
+    }
+
+    document.getElementById('params-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      try {
+        const response = await fetch('/update_params', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rows: this.rows.value,
+            row_width: this.row_width.value,
+            row_height: this.row_height.value,
+            max_cells: this.max_cells.value
+          })
         });
+        const result = await response.json();
+        const flashContainer = document.querySelector('.flash-messages');
+        flashContainer.innerHTML = `<ul><li class="${result.status}">${result.message}</li></ul>`;
 
-        document.getElementById('canvas').addEventListener('mousemove', (e) => {
-            const canvas = e.target;
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+        if (result.status === "success") {
+          circuitParams = {
+            rows: parseInt(this.rows.value),
+            rowWidth: parseInt(this.row_width.value),
+            rowHeight: parseInt(this.row_height.value),
+            maxCells: parseInt(this.max_cells.value)
+          };
+          adjustCanvasSize();
+          drawCircuit();
+        }
+      } catch (error) {
+        console.error(error);
+        const flashContainer = document.querySelector('.flash-messages');
+        flashContainer.innerHTML = `<ul><li class="error">Failed to update parameters</li></ul>`;
+      }
+    });
+
+    document.querySelector('form[action="/search"]').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const flashContainer = document.querySelector('.flash-messages');
+    
+    try {
+        // Mostrar estado de carregamento
+        flashContainer.innerHTML = `<ul><li class="info">Searching for cell...</li></ul>`;
+        
+        const formData = new FormData(form);
+        const response = await fetch('/search', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        // Atualizar mensagens flash
+        flashContainer.innerHTML = `
+            <ul>
+                <li class="${result.status}">${result.message}</li>
+            </ul>
+        `;
+        
+        // Se encontrou a célula, destacar no canvas
+        if (result.status === "success" && result.cell?.found) {
+            // Encontrar a célula completa nos dados
+            const fullCell = circuitData.find(c => c.id === result.cell.id);
+            if (fullCell) {
+                hoveredCell = {
+                    id: result.cell.id,
+                    x: result.cell.x,
+                    y: result.cell.row,
+                    width: fullCell.width,
+                    height: fullCell.height
+                };
+                drawCircuit();
+                
+                // Rolagem automática para a célula
+                const canvas = document.getElementById('canvas');
+                const container = document.getElementById('canvas-container');
+                const cellCenterX = result.cell.x * scale;
+                const canvasCenter = canvas.width / 2;
+                container.scrollLeft = cellCenterX - canvasCenter;
+            }
+        } else {
             hoveredCell = null;
-            
-            for (const cell of circuitData) {
-                const visualX = cell.x * scale;
-                const visualY = cell.y * rowHeight;
-                const visualWidth = cell.width * scale;
-                
-                if (mouseX >= visualX && mouseX <= visualX + visualWidth &&
-                    mouseY >= visualY && mouseY <= visualY + cellHeight) {
-                    hoveredCell = cell;
-                    break;
-                }
-            }
             drawCircuit();
-        });
+        }
+        
+    } catch (error) {
+        console.error('Search error:', error);
+        flashContainer.innerHTML = `
+            <ul>
+                <li class="error">Search failed: ${error.message || 'Unknown error'}</li>
+            </ul>
+        `;
+    }
+});
 
-        document.getElementById('canvas').addEventListener('mouseleave', () => {
-            hoveredCell = null;
-            drawCircuit();
-        });
+    document.getElementById('canvas').addEventListener('mousemove', (e) => {
+      const canvas = e.target;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      hoveredCell = null;
 
-        window.addEventListener('resize', () => {
-            adjustCanvasSize();
-            drawCircuit();
-        });
+      for (const cell of circuitData) {
+        const visualX = cell.x * scale;
+        const visualY = cell.y * rowHeight;
+        const visualWidth = cell.width * scale;
 
-        window.onload = () => {
-            adjustCanvasSize();
-            drawCircuit();
-        };
+        if (mouseX >= visualX && mouseX <= visualX + visualWidth &&
+          mouseY >= visualY && mouseY <= visualY + cellHeight) {
+          hoveredCell = cell;
+          break;
+        }
+      }
+      drawCircuit();
+    });
 
-        document.querySelectorAll('form button').forEach(btn => {
-            if (btn.form.action !== '/search' && btn.form.id !== 'params-form') {
-                btn.addEventListener('click', () => setTimeout(drawCircuit, 300));
-            }
-        });
-    </script>
+    document.getElementById('canvas').addEventListener('mouseleave', () => {
+      hoveredCell = null;
+      drawCircuit();
+    });
+
+    window.addEventListener('resize', () => {
+      adjustCanvasSize();
+      drawCircuit();
+    });
+
+    window.onload = () => {
+      adjustCanvasSize();
+      drawCircuit();
+    };
+
+    document.querySelectorAll('form button').forEach(btn => {
+      if (btn.form.action !== '/search' && btn.form.id !== 'params-form') {
+        btn.addEventListener('click', () => setTimeout(drawCircuit, 300));
+      }
+    });
+  </script>
 </body>
+
 </html>
