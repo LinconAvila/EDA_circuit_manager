@@ -18,6 +18,8 @@ Circuit Manager is a web application designed to visualize and manage circuit la
 - **Adjust circuit parameters (rows, dimensions, capacity)**
 - **Download modified circuit data**
 
+![output circuit](output.png)
+
 ---
 
 ## Technologies Used
@@ -85,9 +87,6 @@ Each cell contains:
 
 ## Interface Description
 
-
-
-
 The web interface consists of:
 
 - **Parameter Configuration:** Set rows, dimensions, and capacity
@@ -95,6 +94,7 @@ The web interface consists of:
 - **Cell Operations:** Search, insert, and remove cells
 - **Visualization Canvas:** Interactive display of circuit layout
 - **Download Button:** Export modified circuit data
+
 
 **Features:**
 
