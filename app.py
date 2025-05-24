@@ -26,16 +26,23 @@ def load():
 @app.route('/search', methods=['POST'])
 def search():
     if not circuit.loaded:
-        flash("Error: No file loaded. Please load a file first.")
-        return redirect(url_for('index'))
+        flash("Error: No file loaded. Please load a file first.", "error")
+        return jsonify({"status": "error", "message": "No file loaded. Please load a file first."})
 
     id = request.form['id']
     result = circuit.search_cell(id)
     if result:
-        flash(f"Cell {id} is in row {result[0]} at position x={result[1]}")
+        message = f"Cell {id} is in row {result[0]} at position x={result[1]}"
+        flash(message, "success")
+        return jsonify({
+            "status": "success",
+            "message": message,
+            "cell": {"id": id, "row": result[0], "x": result[1]}
+        })
     else:
-        flash(f"Cell {id} not found.")
-    return redirect(url_for('index'))
+        message = f"Cell {id} not found."
+        flash(message, "error")
+        return jsonify({"status": "error", "message": message})
 
 @app.route('/insert', methods=['POST'])
 def insert():

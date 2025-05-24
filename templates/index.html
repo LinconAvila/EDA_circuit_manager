@@ -52,16 +52,16 @@
   </div>
 
   <div class="flash-messages">
-    {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <ul>
-      {% for msg in messages %}
-      <li>{{ msg }}</li>
-      {% endfor %}
+        {% for category, msg in messages %}
+        <li class="{{ category }}">{{ msg }}</li>
+        {% endfor %}
     </ul>
     {% endif %}
     {% endwith %}
-  </div>
+</div>
 
   <div class="circuit-container">
     <div class="circuit">
@@ -172,27 +172,45 @@
     }
 
     document.querySelector('form[action="/search"]').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        fetch('/search', {
-            method: 'POST',
-            body: formData
-        })
+    e.preventDefault();
+    const formData = new FormData(this);
+    const cellId = formData.get('id');
+    
+    fetch('/search', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Atualiza as flash messages
+        fetch('/')
         .then(response => response.text())
-        .then(() => {
-            setTimeout(() => {
-                const id = formData.get('id');
-                centerCell(id);
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const flashMessages = doc.querySelector('.flash-messages');
+            if (flashMessages) {
+                document.querySelector('.flash-messages').innerHTML = flashMessages.innerHTML;
+            }
+            
+            // Se a célula foi encontrada, centraliza no canvas
+            if (data.status === "success" && data.cell) {
+                centerCell(data.cell.id);
                 drawCircuit();
-            }, 300);
+            }
         });
-        return false;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Mostra mensagem de erro genérica se algo falhar
+        const flashContainer = document.querySelector('.flash-messages');
+        flashContainer.innerHTML = `
+            <ul>
+                <li class="error">An error occurred during search</li>
+            </ul>
+        `;
     });
-
-    function drawTooltip(ctx, cell) {
-        
-    }
-
+});
     document.getElementById('canvas').addEventListener('mousemove', (e) => {
         const canvas = e.target;
         const rect = canvas.getBoundingClientRect();
